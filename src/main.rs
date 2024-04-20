@@ -4,6 +4,7 @@
 
 use axum::{http::StatusCode, response::IntoResponse, routing::get, Json, Router};
 use std::net::SocketAddr;
+use tokio::net::TcpListener;
 
 // This derive macro allows our main function to run asyncrohnous code. Without it, the main function would run syncrohnously
 #[tokio::main]
@@ -36,22 +37,15 @@ async fn main() {
         .unwrap_or("3000".into())
         .parse()
         .expect("failed to convert to number");
-    // We then create a socket address, listening on 0.0.0.0:PORT
-    let addr = SocketAddr::from(([0, 0, 0, 0], port));
-    // We then log the address we are listening on, using the `info!` macro
-    // The info macro is provided by `tracing`, and allows us to log stuff at an info log level
-    tracing::info!("listening on {}", addr);
-    // Then, we run the server, using the `bind` method on `Server`
-    // `axum::Server` is a re-export of `hyper::Server`
-    axum::Server::bind(&addr)
-        // We then convert our Router into a `Service`, provided by `tower`
-        .serve(app.into_make_service())
-        // This function is async, so we need to await it
-        .await
-        // Then, we unwrap the result, to which if it fails, we panic
-        .unwrap();
-}
 
+    let ipv6 = SocketAddr::from(([0,0,0,0,0,0,0,0], port));
+    let ipv6_listener = TcpListener::bind(&ipv6).await.unwrap();
+
+    tracing::info!("Listening on IPv6 at {}!", ipv6);
+
+    // Serve the router at the IP address
+    axum::serve(ipv6_listener, app).await.unwrap();
+}
 // This is our route handler, for the route root
 // Make sure the function is `async`
 // We specify our return type, `&'static str`, however a route handler can return anything that implements `IntoResponse`

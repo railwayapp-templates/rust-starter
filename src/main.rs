@@ -38,13 +38,19 @@ async fn main() {
         .parse()
         .expect("failed to convert to number");
 
+    // We then create a socket address, listening on [::]:PORT (IPv6 binding)
     let ipv6 = SocketAddr::from(([0,0,0,0,0,0,0,0], port));
+    // Bind the socket address to a TCP listener which listens for requests
     let ipv6_listener = TcpListener::bind(&ipv6).await.unwrap();
 
     tracing::info!("Listening on IPv6 at {}!", ipv6);
 
-    // Serve the router at the IP address
-    axum::serve(ipv6_listener, app).await.unwrap();
+    // Then, we run the server, using the `serve` method (taking both the TCPListener and axum Router)
+    axum::serve(ipv6_listener, app)
+    // This function is async, so we need to await it
+    .await
+    // Then, we unwrap the result, to which if it fails, we panic
+    .unwrap();
 }
 // This is our route handler, for the route root
 // Make sure the function is `async`
